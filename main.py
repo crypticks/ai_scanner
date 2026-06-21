@@ -1,70 +1,95 @@
+import sys
+import time
+import os
 import docker
-import torch
-from transformers import pipeline
-from adapters import BaseAdapter
+import requests
 
-def main():
 
-    path_on_system = "/home/kiwi/code/ai_scanner/models/tinyllama"
-    path_in_env = "/model"
+def get_model_type():
+    return input("Enter the model type\n")
 
-    #client = docker.from_env()
 
-    #container = client.containers.run(
-    #    image="test-image",
+def send_request(port : int, 
+                 data : str):
 
-    #    detach=True,
+    r = requests.post(f"http://localhost:{port}/generate",
+                      json = {"data": data})
 
-    #    network_disabled=True,
+    r.raise_for_status()
+    return r.json()["text"]
 
-    #    mem_limit="2g",
 
-    #    volumes={
-    #        "/home/kiwi/code/ai_scanner/models/tinyllama": {
-    #            "bind": "/model",
-    #            "mode": "ro"
-    #        }
-    #    }
-    #)
-    tokenizer = AutoTokenizer.from_pretrained("/home/kiwi/code/ai_scanner/models/tinyllama")
-    model = AutoModelForCausalLM.from_pretrained(
-        "/home/kiwi/code/ai_scanner/models/tinyllama",
-        torch_dtype=torch.float16,
-        device_map="auto"
-    )
-    #generate function
-    inputs = tokenizer("Hi", return_tensors="pt")
 
-    # Move tensors to the same device as the model
-    inputs = {k: v.to(model.device) for k, v in inputs.items()}
+#--------------------GET MODEL TYPE---------------------#
 
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=100,
-        do_sample=True,
-        temperature=0.7,
-        top_p=0.9,
-        pad_token_id=tokenizer.eos_token_id
-    )
+model_type = get_model_type()
 
-    response = tokenizer.decode(
-        outputs[0],
-        skip_special_tokens=True
-    )
 
-    ##return response
-    ##result = container.exec_run(
-    ##    "garak "
-    ##    "--verbose "
-    ##    "--target_type huggingface.Model "
-    ##    "--target_name /model "
-    ##    "--probes lmrc.Profanity"
-    ##)
+#--------------------DEFINITIONS------------------------#
 
-    ##print(result.output.decode())
-    print(response)
+current_directory = os.getcwd()
+models_directory = os.path.join(current_directory,
+                                "models")
+internal_server_directory = os.path.join(current_directory,
+                                         "internals")
 
-    #container.stop()
-    #container.remove()
 
-main()
+host_port = 8000
+
+
+#-------------------LAUNCH DOCKER-----------------------#
+
+client = docker.from_env()
+
+container = client.containers.run(
+    image="test-image",
+
+    detach=True,
+
+    ports={f"{host_port}/tcp": None},
+
+    environment = {
+        "ADAPTER" : "hf"
+    },
+
+    mem_limit="2g",
+
+    volumes={
+        models_directory: {
+            "bind": "/model",
+            "mode": "ro"
+        }
+    }
+)
+container.reload()
+
+
+#--------------WAIT FOR SERVER SETUP--------------------#
+
+comm_port = int(
+    container.attrs["NetworkSettings"]["Ports"][f"{host_port}/tcp"][0]["HostPort"]
+)
+
+while True:
+    try:
+        r = requests.get(f"http://localhost:{comm_port}/docs")
+        if r.status_code == 200:
+            break
+    except:
+        pass
+
+    container.reload()
+    if container.status != "running":
+        print(container.logs().decode())
+        raise Exception("Container crashed")
+
+    time.sleep(0.5)
+
+
+#-----------------SEND TEST MESSAGE---------------------#
+
+result = send_request(comm_port, "HELLO")
+print(result)
+
+container.stop()
+container.remove()

@@ -1,0 +1,3 @@
+[submodule "vendor/garak"]
+	path = vendor/garak
+	url = git@github.com:crypticks/garak.git

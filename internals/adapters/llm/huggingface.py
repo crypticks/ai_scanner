@@ -14,17 +14,18 @@ class HFAdapter():
             path,
             local_files_only=True,
             device_map="auto",
-            dtype=torch.float16
+            dtype=torch.float16,
+            trust_remote_code=False
         )
 
     def generate(self,
-                 prompt: str,
+                 prompt: list[dict],
                  max_new_tokens: int = 128,
                  temperature: float = 0.7,
                  top_p: float = 0.9) -> str:
 
 
-        inputs = self.tokenizer(prompt, return_tensors="pt")
+        inputs = self.tokenizer(prompt[-1]["content"], return_tensors="pt")
 
         inputs = {
             k: v.to(self.model.device)

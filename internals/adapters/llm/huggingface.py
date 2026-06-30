@@ -25,12 +25,17 @@ class HFAdapter():
                  top_p: float = 0.9) -> str:
 
 
-        inputs = self.tokenizer(prompt[-1]["content"], return_tensors="pt")
+        if getattr(self.tokenizer, "chat_template", None) is not None:
+            inputs = self.tokenizer.apply_chat_template(
+                prompt,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+        else:
+            inputs = prompt[-1]["content"]   # or concatenate messages
 
-        inputs = {
-            k: v.to(self.model.device)
-            for k, v in inputs.items()
-        }
+        device = next(self.model.parameters()).device
+        inputs = self.tokenizer(inputs, return_tensors="pt").to(device)
 
         with torch.no_grad():
             outputs = self.model.generate(

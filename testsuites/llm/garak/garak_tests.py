@@ -11,7 +11,7 @@ import re
 
 def run_test_suite(comm_function, probes: list[str], parsed_specs) -> list[dict]:
     parsed_specs = {
-    "probe": ["probes.lmrc.Bullying"],
+    "probe": ["probes.promptinject.HijackHateHumans"],
     "detector": [],
     "buff": []
 }

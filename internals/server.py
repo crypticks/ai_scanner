@@ -14,10 +14,16 @@ model_path = "/model"
 
 adapter_name = os.environ["ADAPTER"]
 
-print(adapter_name)
 if adapter_name == "huggingface":
     from adapters.llm.huggingface import HFAdapter
     model = HFAdapter(model_path)
+
+
+elif adapter_name == "gguf":
+    from adapters.llm.gguf import GGUFAdapter
+    model = GGUFAdapter(model_path)
+
+
 else:
     raise Exception("Unsupported adapter")
 

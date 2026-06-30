@@ -1,33 +1,36 @@
-import sys
 import time
 import os
 import docker
 import requests
 from testsuites.tester import run_test_suite
 
+#-----------------GET MODEL DETAILS---------------------#
+def get_model_type():
+    return input("Enter the model type\n")
+
+model_type = get_model_type()           # architecture (huggingface)
+model_name = "liquidai"                 # specific name for testing
+
+
 #--------------------DEFINITIONS------------------------#
 
 current_directory = os.getcwd()
-models_directory = os.path.join(current_directory,
-                                "models")
+
+model_directory = os.path.join(current_directory,
+                                "models", model_type, model_name)
+server_directory = os.path.join(current_directory, "internals")
+
+
 internal_server_directory = os.path.join(current_directory,
                                          "internals")
 host_port = 8000
 
 
 
-def get_model_type():
-    return input("Enter the model type\n")
 
 def status_message(message : str):
     print('<'+'-'*(19-len(message)//2)
           + message + '-'*(19-len(message)//2) + '>')
-
-
-
-#--------------------GET MODEL TYPE---------------------#
-
-#model_type = get_model_type()
 
 
 
@@ -46,14 +49,18 @@ container = client.containers.run(
     ports={f"{host_port}/tcp": None},
 
     environment = {
-        "ADAPTER" : "huggingface"
+        "ADAPTER" : model_type
     },
 
-    mem_limit="5g",
+    mem_limit="7g",
 
     volumes={
-        models_directory: {
+        model_directory: {
             "bind": "/model",
+            "mode": "ro"
+        },
+        server_directory: {
+            "bind": "/internals",
             "mode": "ro"
         }
     }
@@ -94,21 +101,21 @@ def send_request(data : list[dict]):
     r.raise_for_status()
     return r.json()["text"]
 
+try:
 
+    #status_message("Trying a garak test")
+    #result = run_test_suite("llm-garak", send_request)
+    #print(result)
 
-status_message("Trying a garak test")
-result = run_test_suite("llm-garak", send_request)
-print(result)
+    status_message("Sending Test Request")
+    result = send_request([
+        {"role": "user", "content":"HELLO"}
+    ])
+    print(result)
 
-#status_message("Sending Test Request")
-#result = send_request([{"content":"HELLO"}])
-#print(result)
-#result = send_request(comm_port, "How are you today")
-#print(result)
-#result = send_request(comm_port, "Whats your name")
-#print(result)
+finally:
 
-status_message("Destroying Container")
-container.stop()
-container.remove()
-status_message("DONE")
+    status_message("Destroying Container")
+    container.stop()
+    container.remove()
+    status_message("DONE")

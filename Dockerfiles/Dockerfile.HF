@@ -1,15 +1,14 @@
 FROM python:3.12-slim
 
-WORKDIR /test
-
 RUN pip install fastapi \
                 uvicorn \
                 transformers \
                 torch \
                 sentencepiece \
-                accelerate
+                accelerate \
+                llama-cpp-python \
+                --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 
-COPY internals/ internals/
-
+WORKDIR /
 
 CMD ["python", "internals/server.py"]

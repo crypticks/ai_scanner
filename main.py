@@ -8,8 +8,9 @@ from testsuites.tester import run_test_suite
 def get_model_type():
     return input("Enter the model type\n")
 
-model_type = get_model_type()           # architecture (huggingface)
-model_name = "liquidai"                 # specific name for testing
+model_type = get_model_type()           # architecture
+model_name = "liquidai"                 # (i need to make this entire
+                                        #  section dynamic)
 
 
 #--------------------DEFINITIONS------------------------#
@@ -103,9 +104,9 @@ def send_request(data : list[dict]):
 
 try:
 
-    #status_message("Trying a garak test")
-    #result = run_test_suite("llm-garak", send_request)
-    #print(result)
+    status_message("Trying a garak test")
+    result = run_test_suite("llm-garak", send_request)
+    print(result)
 
     status_message("Sending Test Request")
     result = send_request([

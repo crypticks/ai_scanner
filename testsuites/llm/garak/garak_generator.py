@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, "./vendor/garak")
 from garak.generators.base import Generator
 from garak.attempt import Message
 
@@ -19,7 +21,7 @@ class CustomGenerator(Generator):
                     generations_this_call=1):
         
         # gotta convert Conversation to list[dict]
-        to_pass = [{"content" : prompt.turns[-1].content.text}]
+        to_pass = [{"role": "user", "content" : prompt.turns[-1].content.text}]
 
         response = self.generate_fn(to_pass)
 

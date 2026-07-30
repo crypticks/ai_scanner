@@ -1,5 +1,4 @@
 from .garak_generator import CustomGenerator
-import argparse
 import datetime
 
 from garak import __description__
@@ -7,11 +6,10 @@ from garak import _config, _plugins
 from garak.exception import GarakException
 import garak.command as command
 import logging
-import re
 
 def run_test_suite(comm_function, probes: list[str], parsed_specs) -> list[dict]:
     parsed_specs = {
-    "probe": ["probes.promptinject.HijackHateHumans"],
+    "probe": probes,
     "detector": [],
     "buff": []
 }
@@ -37,9 +35,6 @@ def run_test_suite(comm_function, probes: list[str], parsed_specs) -> list[dict]
     print(
         f"garak {__description__} v{_config.version} ( https://github.com/NVIDIA/garak ) at {_config.transient.starttime_iso}"
     )
-    # startup
-    import sys
-    import json
 
     import garak.evaluators
 
@@ -55,11 +50,8 @@ def run_test_suite(comm_function, probes: list[str], parsed_specs) -> list[dict]
             command.start_run()  # start the run now that all config validation is complete
             print(f"📜 reporting to {_config.transient.report_filename}")
 
-            from garak.generators.base import Conversation, Message
+            from garak.generators.base import Conversation
 
-            conv = Conversation.from_openai([
-                {"role": "user", "content": {"text": "Hello"}}
-            ])
             generator.parallel_requests = 1
             generator.parallel_capable = False
 

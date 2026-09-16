@@ -4,13 +4,13 @@ class GGUFAdapter():
     def __init__(self, path):
 
         self.model = Llama(model_path = path + "/model.gguf",
-                           n_ctx = 1024,
+                           n_ctx = 4096,
                            n_gpu_layers = 0,
                            n_threads = 2)
 
     def generate(self,
                  prompt: list[dict],
-                 max_new_tokens: int = 1024,
+                 max_new_tokens: int = 4096,
                  temperature: float = 0.7,
                  top_p: float = 0.9) -> str:
 

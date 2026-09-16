@@ -20,7 +20,7 @@ class HFAdapter():
 
     def generate(self,
                  prompt: list[dict],
-                 max_new_tokens: int = 128,
+                 max_new_tokens: int = 2048,
                  temperature: float = 0.7,
                  top_p: float = 0.9) -> str:
 
@@ -31,8 +31,12 @@ class HFAdapter():
                 tokenize=False,
                 add_generation_prompt=True
             )
-        else:
-            inputs = prompt[-1]["content"]   # or concatenate messages
+        else: # simple concatenate
+            inputs = "\n".join(
+                f"{message['role']}: {message['content']}"
+                for message in prompt
+            )
+            #inputs = prompt[-1]["content"]
 
         device = next(self.model.parameters()).device
         inputs = self.tokenizer(inputs, return_tensors="pt").to(device)

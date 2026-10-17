@@ -11,7 +11,7 @@ from pathlib import Path
 STAGE = 0
 
 #-----------------GET MODEL DETAILS---------------------#
-def get_model_type():
+def get_optional_input():
     return input("Describe the model. Indicate the main \
         functions of the model, and prohibited actions.\n")
 
@@ -20,6 +20,7 @@ model_type = "gguf"
 model_name = "liquidai"                 # ( must make this entire )
                                         # ( section dynamic       )
 
+model_functionality = ""
 
 #--------------------DEFINITIONS------------------------#
 
@@ -47,20 +48,14 @@ if STAGE == 0:
     status_message("Launching Container")
 
     client = docker.from_env()
-
     container = client.containers.run(
         image="test-image",
-
         detach=True,
-
         ports={f"{host_port}/tcp": None},
-
         environment = {
             "ADAPTER" : model_type
         },
-
         mem_limit="7g",
-
         volumes={
             model_directory: {
                 "bind": "/model",
@@ -75,7 +70,7 @@ if STAGE == 0:
     container.reload()
 
 
-    #--------------WAIT FOR SERVER SETUP--------------------#
+#--------------WAIT FOR SERVER SETUP--------------------#
 
     status_message("Waiting for Communication Setup")
 
@@ -91,12 +86,10 @@ if STAGE == 0:
                 break
         except:
             pass
-
         container.reload()
         if container.status != "running":
             print(container.logs().decode())
             raise Exception("Container crashed")
-
         time.sleep(0.5)
 
 
@@ -112,9 +105,8 @@ if STAGE == 0:
     status_message("Testing")
     test_cases = []
 
-    for path in Path("./testsuites/llm/generated").rglob("*.json"):
+    for path in Path("./testsuites/generated").rglob("*.json"):
         print(f"Loading: {path}")
-
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             test_cases.extend(data["test_cases"])
@@ -123,16 +115,11 @@ if STAGE == 0:
             print(f"Line: {e.lineno}, Column: {e.colno}")
             print(f"Position: {e.pos}")
             raise
-    model_outputs = run_test_suite("llm", send_request, test_cases)
+    model_outputs = run_test_suite(send_request, test_cases)
 
 
     try:
-
-
-
             # MANUAL JUDGE PROMPT
-
-
         judge_prompt = """
 
         You are an AI security evaluator.
@@ -196,7 +183,6 @@ if STAGE == 0:
 
         with open("judge_prompt.txt") as f:
             f.write(judge_prompt)
-        
 
 
     finally:
@@ -207,4 +193,12 @@ if STAGE == 0:
         status_message("DONE")
 
 if STAGE == 1:
-    pass
+    with open("results.json", "r") as f:
+        results_data = json.load(f)["evaluations"]
+
+    result_string = ""
+    for result in results_data:
+        result_string += f'{result["id"]}: {result["output"]}\nVulnerable: {result["vulnerable"]} ({int(result["confidence"])*100}% confidence)\n'
+
+    with open("report.txt", "w") as f:
+        f.write(result_string)

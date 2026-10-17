@@ -36,7 +36,6 @@ class HFAdapter():
                 f"{message['role']}: {message['content']}"
                 for message in prompt
             )
-            #inputs = prompt[-1]["content"]
 
         device = next(self.model.parameters()).device
         inputs = self.tokenizer(inputs, return_tensors="pt").to(device)

@@ -14,8 +14,6 @@ class GGUFAdapter():
                  temperature: float = 0.7,
                  top_p: float = 0.9) -> str:
 
-        print(prompt)
-
         response = self.model.create_chat_completion(
             messages= prompt,
             temperature=temperature,
